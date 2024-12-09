@@ -1,0 +1,117 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { supabase } from '../lib/supabase';
+
+const { cookies, redirect } = Astro;
+
+// Check authentication
+const accessToken = cookies.get("sb-access-token");
+const refreshToken = cookies.get("sb-refresh-token");
+
+if (!accessToken || !refreshToken) {
+  return redirect("/");
+}
+
+// Verify token is valid
+try {
+  const { data: { session }, error } = await supabase.auth.setSession({
+    refresh_token: refreshToken.value,
+    access_token: accessToken.value,
+  });
+
+  if (error || !session) {
+    cookies.delete("sb-access-token", { path: "/" });
+    cookies.delete("sb-refresh-token", { path: "/" });
+    return redirect("/");
+  }
+} catch (error) {
+  cookies.delete("sb-access-token", { path: "/" });
+  cookies.delete("sb-refresh-token", { path: "/" });
+  return redirect("/");
+}
+---
+
+<Layout>
+  <main class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-50 p-6">
+    <div class="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg border border-gray-100">
+      <div class="text-center">
+        <h2 class="text-3xl font-bold tracking-tight text-gray-900">
+          Enter Phone Number
+        </h2>
+      </div>
+      <form id="phone-form" class="mt-8 space-y-6">
+        <div>
+          <label for="phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            required
+            pattern="^\+[0-9]+"
+            class="appearance-none block w-full px-4 py-3 border border-gray-200 rounded-lg 
+                   shadow-sm placeholder-gray-400
+                   focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                   transition duration-150 ease-in-out"
+            placeholder="+1234567890"
+          />
+        </div>
+        <div>
+          <button
+            type="submit"
+            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg
+                   text-sm font-semibold text-white bg-indigo-600 
+                   hover:bg-indigo-700 focus:outline-none focus:ring-2 
+                   focus:ring-offset-2 focus:ring-indigo-500
+                   transition duration-150 ease-in-out
+                   shadow-sm hover:shadow-md"
+          >
+            Submit
+          </button>
+        </div>
+        <div class="text-center">
+          <a 
+            href="/api/auth/signout"
+            class="text-sm text-indigo-600 hover:text-indigo-500"
+          >
+            Sign out
+          </a>
+        </div>
+      </form>
+      <div id="status-message" class="hidden text-center p-4 rounded-lg bg-red-50 text-red-600 text-sm font-medium"></div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  const form = document.getElementById('phone-form');
+  const statusMessage = document.getElementById('status-message');
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const phone = formData.get('phone') as string;
+
+    try {
+      const response = await fetch('/api/make-call', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ to: phone }),
+      });
+
+      if (!response.ok) throw new Error('Failed to send phone number');
+
+      if (statusMessage) {
+        statusMessage.textContent = 'Phone number submitted successfully!';
+        statusMessage.classList.remove('hidden', 'bg-red-50', 'text-red-600');
+        statusMessage.classList.add('bg-green-50', 'text-green-600');
+      }
+    } catch (error: any) {
+      if (statusMessage) {
+        statusMessage.textContent = error.message;
+        statusMessage.classList.remove('hidden');
+      }
+    }
+  });
+</script> 

@@ -1,0 +1,93 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { supabase } from '../lib/supabase';
+
+const { cookies, redirect } = Astro;
+
+// Check if user is already logged in
+const accessToken = cookies.get("sb-access-token");
+const refreshToken = cookies.get("sb-refresh-token");
+
+if (accessToken && refreshToken) {
+  // Verify the token is valid
+  const { data: { session }, error } = await supabase.auth.setSession({
+    refresh_token: refreshToken.value,
+    access_token: accessToken.value,
+  });
+
+  if (!error && session) {
+    return redirect("/phone");
+  }
+}
+---
+
+<Layout>
+  <main class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-50 p-6">
+    <div class="max-w-md w-full space-y-8 p-8 bg-white rounded-xl shadow-lg border border-gray-100">
+      <div class="text-center">
+        <h2 class="text-3xl font-bold tracking-tight text-gray-900">
+          Welcome back
+        </h2>
+        <p class="mt-2 text-sm text-gray-600">
+          Please sign in to your account
+        </p>
+      </div>
+      
+      <form action="/api/auth/signin" method="post" class="mt-8 space-y-6">
+        <div class="space-y-5">
+          <div>
+            <label for="email" class="block text-sm font-medium text-gray-700">
+              Email address
+            </label>
+            <div class="mt-1">
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                class="appearance-none block w-full px-4 py-3 border border-gray-200 rounded-lg 
+                       shadow-sm placeholder-gray-400
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                       transition duration-150 ease-in-out"
+                placeholder="Enter your email"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <div class="mt-1">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                class="appearance-none block w-full px-4 py-3 border border-gray-200 rounded-lg 
+                       shadow-sm placeholder-gray-400
+                       focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                       transition duration-150 ease-in-out"
+                placeholder="Enter your password"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <button
+            type="submit"
+            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg
+                   text-sm font-semibold text-white bg-indigo-600 
+                   hover:bg-indigo-700 focus:outline-none focus:ring-2 
+                   focus:ring-offset-2 focus:ring-indigo-500
+                   transition duration-150 ease-in-out
+                   shadow-sm hover:shadow-md"
+          >
+            Sign in
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+</Layout>

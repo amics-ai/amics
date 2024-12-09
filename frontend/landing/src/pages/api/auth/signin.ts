@@ -1,21 +1,12 @@
+// With `output: 'static'` configured:
+// export const prerender = false;
 import type { APIRoute } from "astro";
 import { supabase } from "../../../lib/supabase";
 
 export const POST: APIRoute = async ({ request, cookies, redirect }) => {
-  let email: string | undefined;
-  let password: string | undefined;
-
-  // Handle both JSON and form data
-  const contentType = request.headers.get('content-type');
-  if (contentType?.includes('application/json')) {
-    const body = await request.json();
-    email = body.email;
-    password = body.password;
-  } else {
-    const formData = await request.formData();
-    email = formData.get("email")?.toString();
-    password = formData.get("password")?.toString();
-  }
+  const formData = await request.formData();
+  const email = formData.get("email")?.toString();
+  const password = formData.get("password")?.toString();
 
   if (!email || !password) {
     return new Response("Email and password are required", { status: 400 });
@@ -38,4 +29,4 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     path: "/",
   });
   return redirect("/phone");
-}; 
+};

@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
+import { supabaseAdmin } from "../../lib/supabase";
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request,cookies }) => {
   try {
     const { to } = await request.json();
 
@@ -16,9 +17,13 @@ export const POST: APIRoute = async ({ request }) => {
     if (!response.ok) {
       throw new Error('Failed to make call');
     }
-
-    const data = await response.json();
-    return new Response(JSON.stringify(data), {
+    const accessToken = cookies.get("sb-access-token")?.value;
+    const { data, error } = await supabaseAdmin.from('phone_numbers').insert({
+      user_id: accessToken ? (await supabaseAdmin.auth.getUser(accessToken)).data.user?.id : null,
+      phone_number: to,
+    });
+    console.log(data, error);
+    return new Response( "ok", {
       status: 200,
       headers: {
         'Content-Type': 'application/json'

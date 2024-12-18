@@ -1,6 +1,9 @@
 import { Hono } from 'jsr:@hono/hono'
 
 import twilio from "https://esm.sh/twilio@5.3.7?target=deno"
+import { getBestTwilioNumber } from '../_shared/helpers.ts';
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js";
 // change this to your function name
 const functionName = 'make-call'
 const app = new Hono().basePath(`/${functionName}`)
@@ -9,6 +12,7 @@ const app = new Hono().basePath(`/${functionName}`)
 const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID')
 const authToken = Deno.env.get('TWILIO_AUTH_TOKEN')
 
+const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
 if (!accountSid || !authToken) {
     throw new Error('TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN must be set')
@@ -17,11 +21,14 @@ if (!accountSid || !authToken) {
 const client = new twilio.Twilio(accountSid, authToken)
 
 app.post('/', async (c) => {
-    const { to, from, init, voice } = await c.req.json()
+    const { to, prefix, init, voice } = await c.req.json()
 
     if (!to) {
       return c.json({ error: "Missing 'to' parameter" }, { status: 400 })
   }
+
+  const from = await getBestTwilioNumber(prefix, supabase)
+
     const outboundTwiMLSupabase = `<?xml version="1.0" encoding="UTF-8"?>
     <Response>
       <Connect>
@@ -30,6 +37,7 @@ app.post('/', async (c) => {
           <Parameter name="voice" value="${voice}"/>
           <Parameter name="from" value="${from}"/>
           <Parameter name="to" value="${to}"/>
+          <Parameter name="prefix" value="${prefix}"/>
         </Stream>
       </Connect>
     </Response>`;
@@ -42,6 +50,7 @@ app.post('/', async (c) => {
           <Parameter name="voice" value="${voice}"/>
           <Parameter name="from" value="${from}"/>
           <Parameter name="to" value="${to}"/>
+          <Parameter name="prefix" value="${prefix}"/>
         </Stream>
       </Connect>
     </Response>`;
@@ -56,7 +65,7 @@ app.post('/', async (c) => {
     })
 
     
-    return c.json({ success: true, callSid: call.sid })
+    return c.json({ success: true, callSid: call.sid, from: from })
 } catch (error) {
         return c.json({ error: error.message }, { status: 400 })
     }

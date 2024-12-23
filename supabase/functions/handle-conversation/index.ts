@@ -1,7 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { Hono } from "jsr:@hono/hono";
-import TwilioMediaStreamSaveAudio from "./TwilioMediaStreamSaveAudio.ts";
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const OPENAI_URL = Deno.env.get("OPENAI_URL");
 
@@ -22,10 +21,16 @@ let callStartTime: number | null = null;
 let callEndTime: number | null = null;
 let init: boolean = false;
 let prefix: string | null = null;
-// Constants// Clean protocols and slashes
-let saveAudio: TwilioMediaStreamSaveAudio | null = null;
 
-let VOICE = "alloy";
+const currentTranscription: {
+  turns: { speaker: string; text: string; timestamp: string }[];
+  metadata: { call_duration: number };
+} = {
+  turns: [],
+  metadata: { call_duration: 0 },
+};
+
+let VOICE = "ember";
 
 // List of Event Types to log to the console. See the OpenAI Realtime API Documentation.
 const LOG_EVENT_TYPES = [
@@ -75,9 +80,12 @@ const handleSpeechStartedEvent = (openAiWs: WebSocket, socket: WebSocket) => {
 };
 
 const saveConversation = async () => {
+  if (!callEndTime) {
+    callEndTime = Date.now();
+  }
   const duration = callEndTime && callStartTime
-    ? Math.max(0, Math.floor((callEndTime - callStartTime) / 1000))
-    : 0;
+    ? Math.ceil((callEndTime - callStartTime) / 1000)
+      : 0;
 
   const { error: dbError } = await supabase
     .from("calls")
@@ -85,11 +93,12 @@ const saveConversation = async () => {
       call_sid: streamSid,
       status: "completed",
       start_time: new Date(callStartTime!),
-      end_time: new Date(callEndTime!),
+      end_time: new Date(callEndTime || Date.now()),
       duration: duration,
       is_test_call: init,
       from_number: fromNumber,
       to_number: toNumber,
+      transcription: currentTranscription,
     });
 
   if (dbError) {
@@ -124,6 +133,9 @@ app.get("/", (c) => {
         turn_detection: { type: "server_vad" },
         input_audio_format: "g711_ulaw",
         output_audio_format: "g711_ulaw",
+        input_audio_transcription: {
+          model: "whisper-1"
+        },
         voice: VOICE,
         instructions: SYSTEM_MESSAGE,
         modalities: ["text", "audio"],
@@ -174,9 +186,6 @@ app.get("/", (c) => {
               audio: data.media.payload,
             };
 
-            
-           
-
             openAiWs.send(JSON.stringify(audioAppend));
           }
           break;
@@ -184,28 +193,29 @@ app.get("/", (c) => {
           streamSid = data.start.streamSid;
           responseStartTimestamp = null;
           latestMediaTimestamp = 0;
-          init = data.start.customParameters?.init === "true" ||
-            data.start.customParameters?.init === true;
-          VOICE = data.start.customParameters?.voice || "alloy";
+          init = JSON.parse(data.start.customParameters?.init)
+          VOICE = data.start.customParameters?.voice || "ember";
           fromNumber = data.start.customParameters?.from;
           toNumber = data.start.customParameters?.to;
           prefix = data.start.customParameters?.prefix;
-          saveAudio = new TwilioMediaStreamSaveAudio({
-            supabaseClient: supabase,
-            bucketName: "conversations",
-            filePath: `${streamSid}/audio.wav`,
-          });
-        
+          
+          console.log("Init server: ", data.start.customParameters?.init)
+          console.log("Init client: ", init)
 
           if (init) {
             console.log("Using init prompt...");
-            SYSTEM_MESSAGE = await supabase.from("prompts").select("prompt").eq(
-              "id",
-              2,
-            ).single().then((res) => res.data?.prompt);
-            const locale = await supabase.from("phone_prefixes").select("primary_locale").eq("prefix", prefix).single().then((res) => res.data?.primary_locale);
-            SYSTEM_MESSAGE = SYSTEM_MESSAGE + " \n\n" + "Speak to the user in this locale: " + locale + " \n\n" + "You are calling from this number: " + fromNumber + " \n\n"+ "The local date and time is: " + new Date().toLocaleString(locale)
-            console.log(locale, new Date().toLocaleString(locale))
+            const [{ data: promptData }, { data: prefixData }] = await Promise.all([
+              supabase.from("prompts").select("prompt").eq("id", 2).single(),
+              supabase.from("phone_prefixes").select("primary_locale").eq("prefix", prefix).single()
+            ]);
+
+            const locale = prefixData?.primary_locale;
+            SYSTEM_MESSAGE = promptData?.prompt + " \n\n" + 
+              `The user's locale is: ${locale}. Always respond using the language and regional dialect associated with this locale. This means choosing appropriate spelling, vocabulary, phrasing, and tone that feels natural and authentic to that region. If you are unsure of specific regional nuances, default to widely accepted standards for that locale's language.` + 
+              " \n\n" + "You are calling from this number: " + fromNumber + 
+              " \n\n" + "The local date and time is: " + new Date().toLocaleString(locale);
+              
+            console.log(locale, new Date().toLocaleString(locale));
           } else {
             const [
               { data: promptData },
@@ -216,15 +226,24 @@ app.get("/", (c) => {
                 "long_term_context, short_term_context",
               ).eq("phone_number", toNumber).single(),
             ]);
-            SYSTEM_MESSAGE = promptData?.prompt;
-            if (contextError) {
-              console.error("Error getting context:", contextError);
-            } else {
-             
+            // Initialize SYSTEM_MESSAGE with the prompt
+            SYSTEM_MESSAGE = promptData?.prompt || "";
+            
+            // Get the locale data regardless of context error
+            const { data: prefixData } = await supabase.from("phone_prefixes").select("primary_locale").eq("prefix", prefix).single();
+            const locale = prefixData?.primary_locale;
+            
+            // Add locale and time information
+            SYSTEM_MESSAGE = SYSTEM_MESSAGE + " \n\n" + 
+              `The user's locale is: ${locale}. Always respond using the language and regional dialect associated with this locale. This means choosing appropriate spelling, vocabulary, phrasing, and tone that feels natural and authentic to that region. If you are unsure of specific regional nuances, default to widely accepted standards for that locale's language.` +
+              " \n\n" + "The local date and time is: " + new Date().toLocaleString(locale);
+
+            // Add context information if available
+            if (!contextError && context) {
               SYSTEM_MESSAGE = SYSTEM_MESSAGE + " \n\n" +
                 "Below is information about the user and highlights from previous conversations. You already met them. Use this context to make the interaction personalized and meaningful. Reference it subtly and naturally, as appropriate, for example by mentioning the user's name or referring to previous conversations." +
-                " \n\n" + "Long Term Context: " + context?.long_term_context +
-                " \n\n" + "Short Term Context: " + context?.short_term_context;
+                " \n\n" + "Long Term Context: " + (context.long_term_context || "No previous conversation history.") +
+                " \n\n" + "Short Term Context: " + (context.short_term_context || "This is the first conversation.");
             }
           }
           openAiWs = new WebSocket(
@@ -247,15 +266,10 @@ app.get("/", (c) => {
               ) {
                 goodbyeMessageSent = true;
                 const goodbyeMessage = {
-                  type: "conversation.item.create",
-                  item: {
-                    type: "message",
-                    role: "user",
-                    content: [{
-                      type: "input_text",
-                      text:
-                        "{198&*2p}",
-                    }],
+                  type: "response.create",
+                  response: {
+                    input: [],
+                    prompt: "{198&*2p}"
                   },
                 };
   
@@ -265,11 +279,17 @@ app.get("/", (c) => {
                     turn_detection: { type: "none" },
                   },
                 };
-                openAiWs.send(JSON.stringify(noTurnSessionUpdate));
+                console.log("Sending goodbye message")
+                //openAiWs.send(JSON.stringify(noTurnSessionUpdate));
                 //openAiWs.send(JSON.stringify({ type: "response.cancel" }));
                 openAiWs.send(JSON.stringify(goodbyeMessage));
                 //openAiWs.send(JSON.stringify({ type: "response.create" }));
-  
+              setTimeout(() => {
+                if (socket && socket.readyState === WebSocket.OPEN) {
+                  console.log("Closing  WebSocket after 15 seconds");
+                  socket.close();
+                }
+              }, 15000);
                 
               }
             }, 120000);
@@ -313,7 +333,7 @@ app.get("/", (c) => {
                   media: { payload: response.delta },
                 };
                 socket.send(JSON.stringify(audioDelta));
-                saveAudio?.twilioStreamMedia(response.delta);
+                
 
                 if (!responseStartTimestamp) {
                   responseStartTimestamp = latestMediaTimestamp;
@@ -323,6 +343,23 @@ app.get("/", (c) => {
                   lastAssistantItem = response.item_id;
                 }
                 sendMark(socket, streamSid);
+              }
+              // Handle user's speech transcription
+              if (response.type === "conversation.item.input_audio_transcription.completed") {
+                currentTranscription.turns.push({
+                  speaker: "user",
+                  text: response.transcript,
+                  timestamp: new Date().toISOString()
+                });
+              }
+
+              // Handle assistant's complete speech transcription
+              if (response.type === "response.audio_transcript.done") {
+                currentTranscription.turns.push({
+                  speaker: "assistant",
+                  text: response.transcript,
+                  timestamp: new Date().toISOString()
+                });
               }
 
               if (response.type === "input_audio_buffer.speech_started") {
@@ -354,7 +391,6 @@ app.get("/", (c) => {
           break;
         case "stop":
           callEndTime = Date.now();
-          await saveAudio?.twilioStreamStop();
           break;
         default:
           console.log(

@@ -1,0 +1,100 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+---
+
+<Layout>
+  <Nav />
+  <main class="pt-16">
+    <!-- Hero Section -->
+    <section class="bg-gray-50 py-24">
+      <div class="container mx-auto px-4">
+        <div class="max-w-3xl mx-auto text-center">
+          <h1 class="text-4xl md:text-5xl font-geist font-black text-black mb-6">
+            Our Mission
+          </h1>
+          <p class="text-2xl md:text-3xl font-geist font-medium text-gray-600 mb-4">
+            Connecting Hearts with Technology
+          </p>
+          <p class="text-lg text-gray-600">
+            At amics, we believe no one should feel alone. Loneliness affects millions of people every day, yet genuine connection can often feel out of reach. Our mission is to bridge that gap with an AI companion that offers care, comfort, and consistency.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mission Content -->
+    <section class="py-24">
+      <div class="container mx-auto px-4">
+        <div class="max-w-3xl mx-auto space-y-20">
+          <!-- A Friend for Everyone -->
+          <div>
+            <h2 class="text-3xl font-geist font-bold mb-6">A Friend for Everyone</h2>
+            <p class="text-gray-600 text-lg leading-relaxed">
+              amics was created to make meaningful companionship accessible to all. By combining cutting-edge AI with a human touch, we're building a future where technology doesn't just assist—it connects.
+            </p>
+          </div>
+
+          <!-- Built to Make a Difference -->
+          <div>
+            <h2 class="text-3xl font-geist font-bold mb-6">Built to Make a Difference</h2>
+            <p class="text-gray-600 text-lg leading-relaxed">
+              Loneliness isn't just a feeling—it's a challenge that affects mental and emotional well-being. amics is here to create moments of connection that lift spirits, foster belonging, and remind people that someone cares.
+            </p>
+          </div>
+
+          <!-- Innovation with Empathy -->
+          <div>
+            <h2 class="text-3xl font-geist font-bold mb-6">Innovation with Empathy</h2>
+            <p class="text-gray-600 text-lg leading-relaxed">
+              We don't just create AI; we create companions. amics is designed with empathy at its core, ensuring every interaction feels personal, genuine, and uplifting.
+            </p>
+          </div>
+
+          <!-- Join Us -->
+          <div>
+            <h2 class="text-3xl font-geist font-bold mb-6">Join Us on This Journey</h2>
+            <p class="text-gray-600 text-lg leading-relaxed">
+              We're just getting started, and we'd love for you to be part of this mission. Together, we can redefine what connection means in a digital world.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Email Signup Banner -->
+    <section class="bg-sky-500 py-16">
+      <div class="container mx-auto px-4">
+        <div class="max-w-3xl mx-auto text-center">
+          <h2 class="text-3xl font-geist font-bold text-white mb-6">
+            Stay Updated on Our Journey
+          </h2>
+          <p class="text-lg text-white/90 mb-8">
+            Join our newsletter to receive updates about amics and be the first to know about new features.
+          </p>
+          
+          <!-- Email Form -->
+          <form class="max-w-md mx-auto">
+            <div class="flex gap-2">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                class="flex-1 px-4 py-3 rounded-lg border-2 border-transparent focus:border-white/20 bg-white/10 text-white placeholder-white/60 focus:outline-none"
+                required
+              />
+              <button
+                type="submit"
+                class="px-6 py-3 bg-white text-sky-500 font-geist-medium rounded-lg hover:bg-white/90 transition-colors duration-200"
+              >
+                Subscribe
+              </button>
+            </div>
+            <p class="mt-4 text-sm text-white/80">
+              We respect your privacy. Unsubscribe at any time.
+            </p>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+</Layout> 

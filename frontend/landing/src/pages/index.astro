@@ -12,10 +12,12 @@ import Nav from '../components/Nav.astro';
 
   <main class="min-h-screen relative">
     <!-- Hero Section with Background Image -->
-    <section class="relative h-screen flex items-center">
+    <section class="relative h-screen flex items-center" aria-label="Hero">
       <div 
         class="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat opacity-[0.3]" 
         style="background-image: url('/bg2.webp');"
+        role="img"
+        aria-label="Background image"
       ></div>
 
       <div class="relative z-10 container mx-auto px-4">
@@ -35,7 +37,7 @@ import Nav from '../components/Nav.astro';
 
           <!-- Trust Indicators -->
           <div class="mt-8 text-sm text-gray-500">
-            <p>✓ Private  &nbsp; ✓ No obligation &nbsp; ✓ Latest models</p>
+            <p><span aria-label="Checkmark">✓</span> Private &nbsp; <span aria-label="Checkmark">✓</span> No obligation &nbsp; <span aria-label="Checkmark">✓</span> Latest models</p>
           </div>
         </div>
       </div>

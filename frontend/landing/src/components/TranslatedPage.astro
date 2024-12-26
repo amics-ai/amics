@@ -1,0 +1,22 @@
+---
+import { getLangFromUrl } from '../i18n/utils';
+import { pages } from '../i18n/pages';
+import Layout from '../layouts/Layout.astro';
+
+interface Props {
+  pageName: 'mission' | 'press' | 'terms' | 'privacy';
+}
+
+const { pageName } = Astro.props;
+const lang = getLangFromUrl(Astro.url);
+const content = pages[lang][pageName];
+---
+
+<Layout>
+  <main class="container mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold mb-6">{content.title}</h1>
+    <div class="prose max-w-none">
+      {content.content}
+    </div>
+  </main>
+</Layout> 

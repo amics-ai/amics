@@ -7,70 +7,114 @@ const zenblog = createZenblogClient({ blogId: import.meta.env.ZENBLOG_BLOG_ID })
 
 // Fetch posts from Zenblog
 const posts = await zenblog.posts.list();
+
+// Get the latest post and remaining posts
+const [latestPost, ...otherPosts] = posts.data;
 ---
 
 <Layout title="Blog | Amics">
   <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Hero Section -->
-    <div class="py-16 sm:py-24">
+    <div class="py-12 sm:py-16">
       <div class="text-center">
-        <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
-          Our Blog
+        <h1 class="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl pt-12">
+          Blog
         </h1>
-        <p class="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
+        <p class="mt-3 max-w-2xl mx-auto text-lg text-gray-500 sm:mt-4">
           Insights, updates, and stories from our team
         </p>
       </div>
     </div>
 
-    <!-- Blog Post Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-24">
-      {posts.data.map((post) => (
-        <article class="flex flex-col overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300">
-          {post.cover_image && (
-            <div class="flex-shrink-0">
+    <!-- Latest Post (Featured) -->
+    {latestPost && (
+      <div class="mb-12">
+        <a href={`/blog/${latestPost.slug}`} class="block group">
+          <div class="relative rounded-xl overflow-hidden bg-gray-100 aspect-[21/9] sm:aspect-[2/1]">
+            {latestPost.cover_image ? (
               <img
-                class="h-48 w-full object-cover"
+                src={latestPost.cover_image}
+                alt={latestPost.title}
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            ) : (
+              <div class="w-full h-full bg-gradient-to-r from-sky-400 to-blue-500" />
+            )}
+            <div class="absolute inset-0 bg-gradient-to-t from-gray-900/75 via-gray-900/50 to-transparent" />
+            <div class="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8">
+              {latestPost.tags && (
+                <div class="flex flex-wrap gap-2 mb-3">
+                  {latestPost.tags.map((tag) => (
+                    <span class="text-xs sm:text-sm font-medium text-sky-300 bg-sky-900/30 px-2.5 py-0.5 rounded-full">
+                      {tag.slug}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <h2 class="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3 group-hover:text-sky-100 transition-colors line-clamp-2">
+                {latestPost.title}
+              </h2>
+              <p class="text-base sm:text-lg text-gray-200 mb-3 line-clamp-2 hidden sm:block">
+                {latestPost.excerpt}
+              </p>
+              <div class="flex items-center justify-between text-gray-300 text-xs sm:text-sm">
+                <time datetime={latestPost.published_at}>
+                  {new Date(latestPost.published_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </time>
+                <span class="font-medium text-sky-300 bg-sky-900/30 px-2.5 py-0.5 rounded-full">Latest Post</span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    )}
+
+    <!-- Other Posts Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 pb-16 sm:pb-24">
+      {otherPosts.map((post) => (
+        <article class="flex flex-col overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white">
+          {post.cover_image && (
+            <div class="flex-shrink-0 aspect-[16/9]">
+              <img
+                class="w-full h-full object-cover"
                 src={post.cover_image}
                 alt={post.title}
               />
             </div>
           )}
-          <div class="flex-1 bg-white p-6 flex flex-col justify-between">
+          <div class="flex-1 p-4 sm:p-6 flex flex-col justify-between">
             <div class="flex-1">
               {post.tags && (
-                <div class="flex flex-wrap gap-2">
+                <div class="flex flex-wrap gap-1.5 mb-2">
                   {post.tags.map((tag) => (
-                    <p class="text-sm font-medium text-sky-600">
+                    <p class="text-xs sm:text-sm font-medium text-sky-600">
                       {tag.slug}
                     </p>
                   ))}
                 </div>
               )}
-              <a href={`/blog/${post.slug}`} class="block mt-2">
-                <h3 class="text-xl font-semibold text-gray-900">
+              <a href={`/blog/${post.slug}`} class="block">
+                <h3 class="text-lg sm:text-xl font-semibold text-gray-900 line-clamp-2 hover:text-sky-600 transition-colors">
                   {post.title}
                 </h3>
-                <p class="mt-3 text-base text-gray-500">
+                <p class="mt-2 text-sm sm:text-base text-gray-500 line-clamp-2">
                   {post.excerpt}
                 </p>
               </a>
             </div>
-            <div class="mt-6 flex items-center">
-              
-              <div class="ml-3">
-            
-                <div class="flex space-x-1 text-sm text-gray-500">
-                  <time datetime={post.published_at}>
-                    {new Date(post.published_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </time>
-                  <span aria-hidden="true">&middot;</span>
-                  
-                </div>
+            <div class="mt-4">
+              <div class="text-xs sm:text-sm text-gray-500">
+                <time datetime={post.published_at}>
+                  {new Date(post.published_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </time>
               </div>
             </div>
           </div>

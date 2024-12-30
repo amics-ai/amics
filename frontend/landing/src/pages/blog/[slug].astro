@@ -15,9 +15,40 @@ if (!post) {
   return Astro.redirect('/404');
 }
 
+// Format date for schema
+const publishDate = new Date(post.data.published_at).toISOString();
+
+// Prepare schema.org data
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": post.data.title,
+  "description": post.data.excerpt,
+  "image": post.data.cover_image,
+  "datePublished": publishDate,
+  "dateModified": publishDate,
+  "author": {
+    "@type": "Organization",
+    "name": "Amics AI",
+    "url": "https://amics.ai"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Amics AI",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://amics.ai/amics.webp"
+    }
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": `https://amics.ai/blog/${slug}`
+  }
+};
+
 export const prerender = true;
 export async function getStaticPaths() {
-    const zenblog = createZenblogClient({ blogId: import.meta.env.ZENBLOG_BLOG_ID });
+  const zenblog = createZenblogClient({ blogId: import.meta.env.ZENBLOG_BLOG_ID });
   const articles = await zenblog.posts.list();
 
   return articles.data.map((article) => ({
@@ -27,7 +58,29 @@ export async function getStaticPaths() {
 }
 ---
 
-<Layout title={`${post.data.title} | Amics`}>
+<Layout 
+  title={`${post.data.title} | Amics AI`}
+  description={post.data.excerpt}
+  image={post.data.cover_image}
+  article={{
+    publishedTime: publishDate,
+    modifiedTime: publishDate,
+    authors: ['Amics AI'],
+    tags: post.data.tags?.map(tag => tag.slug) || [],
+  }}
+>
+  <Fragment slot="head">
+    <!-- Additional Meta Tags -->
+    <link rel="canonical" href={`https://amics.ai/blog/${slug}`} />
+    <meta name="author" content="Amics AI" />
+    <meta name="robots" content="index, follow" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@amics_ai" />
+    
+    <!-- Schema.org markup -->
+    <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+  </Fragment>
+
   <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 pt-24">
     {post.data.cover_image && (
       <div class="mb-8">

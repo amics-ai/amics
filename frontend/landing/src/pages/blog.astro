@@ -8,8 +8,13 @@ const zenblog = createZenblogClient({ blogId: import.meta.env.ZENBLOG_BLOG_ID })
 // Fetch posts from Zenblog
 const posts = await zenblog.posts.list();
 
-// Get the latest post and remaining posts
-const [latestPost, ...otherPosts] = posts.data;
+// Find pinned post and filter remaining posts
+const pinnedPost = posts.data.find(post => post.tags?.some(tag => tag.slug === 'pin'));
+const regularPosts = posts.data.filter(post => !post.tags?.some(tag => tag.slug === 'pin'));
+
+// Get latest post and all posts for grid
+const [latestPost, ...rest] = regularPosts;
+const gridPosts = posts.data.filter(post => post !== pinnedPost);
 ---
 
 <Layout title="Blog | Amics">
@@ -26,8 +31,57 @@ const [latestPost, ...otherPosts] = posts.data;
       </div>
     </div>
 
-    <!-- Latest Post (Featured) -->
-    {latestPost && (
+    <!-- Pinned Post (if exists) -->
+    {pinnedPost && (
+      <div class="mb-12">
+        <a href={`/blog/${pinnedPost.slug}`} class="block group">
+          <div class="relative rounded-xl overflow-hidden bg-gray-100 aspect-[21/9] sm:aspect-[2/1] ring-4 ring-sky-500/20">
+            {pinnedPost.cover_image ? (
+              <img
+                src={pinnedPost.cover_image}
+                alt={pinnedPost.title}
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            ) : (
+              <div class="w-full h-full bg-gradient-to-r from-sky-400 to-blue-500" />
+            )}
+            <div class="absolute inset-0 bg-gradient-to-t from-gray-900/75 via-gray-900/50 to-transparent" />
+            <div class="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8">
+              {pinnedPost.tags && (
+                <div class="flex flex-wrap gap-2 mb-3">
+                  {pinnedPost.tags
+                    .filter(tag => tag.slug !== 'pin')
+                    .map((tag) => (
+                      <span class="text-xs sm:text-sm font-medium text-sky-300 bg-sky-900/30 px-2.5 py-0.5 rounded-full">
+                        {tag.slug}
+                      </span>
+                    ))}
+                </div>
+              )}
+              <h2 class="text-2xl sm:text-3xl font-bold text-white mb-2 sm:mb-3 group-hover:text-sky-100 transition-colors line-clamp-2">
+                {pinnedPost.title}
+              </h2>
+              <p class="text-base sm:text-lg text-gray-200 mb-3 line-clamp-2 hidden sm:block">
+                {pinnedPost.excerpt}
+              </p>
+              <div class="flex items-center justify-between text-gray-300 text-xs sm:text-sm">
+                <time datetime={pinnedPost.published_at}>
+                  {new Date(pinnedPost.published_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </time>
+                <span class="font-medium text-sky-300 bg-sky-900/30 px-2.5 py-0.5 rounded-full">Featured</span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+    )}
+
+    <!-- Latest Post (if not pinned) -->
+    {!pinnedPost && latestPost && (
       <div class="mb-12">
         <a href={`/blog/${latestPost.slug}`} class="block group">
           <div class="relative rounded-xl overflow-hidden bg-gray-100 aspect-[21/9] sm:aspect-[2/1]">
@@ -74,8 +128,8 @@ const [latestPost, ...otherPosts] = posts.data;
     )}
 
     <!-- Other Posts Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 pb-16 sm:pb-24">
-      {otherPosts.map((post) => (
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 pb-16">
+      {gridPosts.map((post) => (
         <article class="flex flex-col overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white">
           {post.cover_image && (
             <div class="flex-shrink-0 aspect-[16/9]">
@@ -90,11 +144,13 @@ const [latestPost, ...otherPosts] = posts.data;
             <div class="flex-1">
               {post.tags && (
                 <div class="flex flex-wrap gap-1.5 mb-2">
-                  {post.tags.map((tag) => (
-                    <p class="text-xs sm:text-sm font-medium text-sky-600">
-                      {tag.slug}
-                    </p>
-                  ))}
+                  {post.tags
+                    .filter(tag => tag.slug !== 'pin')
+                    .map((tag) => (
+                      <p class="text-xs sm:text-sm font-medium text-sky-600">
+                        {tag.slug}
+                      </p>
+                    ))}
                 </div>
               )}
               <a href={`/blog/${post.slug}`} class="block">
@@ -121,5 +177,5 @@ const [latestPost, ...otherPosts] = posts.data;
         </article>
       ))}
     </div>
-  </main>
-</Layout>
+
+    

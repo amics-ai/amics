@@ -1,5 +1,7 @@
 ---
 import Nav from '../components/Nav.astro';
+import { ClientRouter } from 'astro:transitions';
+
 interface Props {
 	title: string;
 	description?: string;
@@ -23,11 +25,12 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site);
 ---
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" transition:animate="none">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/x-icon" href="/icon.ico" />
+		<ClientRouter />
 		
 		<!-- Primary Meta Tags -->
 		<title>{title}</title>

@@ -132,7 +132,7 @@ const gridPosts = posts.data.filter(post => post !== pinnedPost);
       {gridPosts.map((post) => (
         <article class="flex flex-col overflow-hidden rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 bg-white">
           {post.cover_image && (
-            <div class="flex-shrink-0 aspect-[16/9]">
+            <div class="flex-shrink-0 aspect-[16/9]" transition:name={`post-image-${post.slug}`}>
               <img
                 class="w-full h-full object-cover"
                 src={post.cover_image}
@@ -143,7 +143,7 @@ const gridPosts = posts.data.filter(post => post !== pinnedPost);
           <div class="flex-1 p-4 sm:p-6 flex flex-col justify-between">
             <div class="flex-1">
               {post.tags && (
-                <div class="flex flex-wrap gap-1.5 mb-2">
+                <div class="flex flex-wrap gap-1.5 mb-2" transition:name={`post-tags-${post.slug}`}>
                   {post.tags
                     .filter(tag => tag.slug !== 'pin')
                     .map((tag) => (
@@ -154,7 +154,10 @@ const gridPosts = posts.data.filter(post => post !== pinnedPost);
                 </div>
               )}
               <a href={`/blog/${post.slug}`} class="block">
-                <h3 class="text-lg sm:text-xl font-semibold text-gray-900 line-clamp-2 hover:text-sky-600 transition-colors">
+                <h3 
+                  class="text-lg sm:text-xl font-semibold text-gray-900 line-clamp-2 hover:text-sky-600 transition-colors"
+                  transition:name={`post-title-${post.slug}`}
+                >
                   {post.title}
                 </h3>
                 <p class="mt-2 text-sm sm:text-base text-gray-500 line-clamp-2">

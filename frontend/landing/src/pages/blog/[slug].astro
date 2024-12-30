@@ -83,7 +83,7 @@ export async function getStaticPaths() {
 
   <article class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 pt-24">
     {post.data.cover_image && (
-      <div class="mb-8">
+      <div class="mb-8" transition:name={`post-image-${post.data.slug}`}>
         <img
           src={post.data.cover_image}
           alt={post.data.title}
@@ -93,8 +93,15 @@ export async function getStaticPaths() {
     )}
 
     <header class="mb-8">
+      <h1 
+        class="text-4xl font-bold text-gray-900 mb-4"
+        transition:name={`post-title-${post.data.slug}`}
+      >
+        {post.data.title}
+      </h1>
+
       {post.data.tags && (
-        <div class="flex flex-wrap gap-2 mb-4">
+        <div class="flex flex-wrap gap-2 mb-4" transition:name={`post-tags-${post.data.slug}`}>
           {post.data.tags.map((tag) => (
             <span class="text-sm font-medium text-sky-600 bg-sky-50 px-3 py-1 rounded-full">
               {tag.slug}
@@ -102,10 +109,6 @@ export async function getStaticPaths() {
           ))}
         </div>
       )}
-
-      <h1 class="text-4xl font-bold text-gray-900 mb-4">
-        {post.data.title}
-      </h1>
 
       <div class="flex items-center text-gray-500 text-sm">
         <time datetime={post.data.published_at}>
@@ -123,44 +126,67 @@ export async function getStaticPaths() {
     </div>
 
     <!-- Newsletter Section -->
-  <div class="py-16 border-t border-gray-200">
-    <div class="max-w-xl mx-auto text-center">
-      <h2 class="text-3xl font-bold tracking-tight text-gray-900">
-        Stay up to date
-      </h2>
-      <p class="mt-4 text-lg text-gray-600">
-        Get notified when we publish new insights and developments in AI
-      </p>
-      <form id="newsletter-form" class="mt-8 flex flex-col gap-4 max-w-md mx-auto">
-        <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
-          <label for="email-address" class="sr-only">Email address</label>
-          <input
-            id="email-address"
-            name="email"
-            type="email"
-            autocomplete="email"
-            required
-            class="min-w-0 flex-auto rounded-lg border-0 px-3.5 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 text-sm sm:text-base"
-            placeholder="Enter your email"
-          />
-          <button
-            type="submit"
-            class="flex-none rounded-lg bg-sky-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Subscribe
-          </button>
+    <div class="py-16 border-t border-gray-200">
+      <div class="relative isolate overflow-hidden bg-gradient-to-b from-sky-100/20 to-white rounded-2xl">
+        <div class="mx-auto max-w-7xl px-6 py-12 sm:py-16 lg:px-8">
+          <div class="mx-auto grid max-w-2xl grid-cols-1 gap-x-8 gap-y-8 lg:max-w-none">
+            <div class="max-w-xl lg:max-w-lg space-y-6">
+              <h2 class="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+                Join Our Newsletter
+              </h2>
+              <p class="text-lg leading-8 text-gray-600">
+                Get exclusive insights, developments, and expert analysis delivered straight to your inbox.
+              </p>
+              <form id="newsletter-form" class="max-w-md flex flex-col gap-4">
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                  <label for="email-address" class="sr-only">Email address</label>
+                  <input
+                    id="email-address"
+                    name="email"
+                    type="email"
+                    autocomplete="email"
+                    required
+                    class="min-w-0 flex-auto rounded-lg border-0 px-3.5 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 text-sm sm:text-base"
+                    placeholder="Enter your email"
+                  />
+                  <button
+                    type="submit"
+                    class="flex-none rounded-lg bg-sky-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Subscribe
+                  </button>
+                </div>
+                <div id="success-message" class="text-sm text-green-600 hidden"></div>
+                <div id="error-message" class="text-sm text-red-600 hidden"></div>
+              </form>
+              <p class="text-sm leading-6 text-gray-500">
+                We care about your data. Read our{" "}
+                <a href="/privacy" class="font-medium text-sky-600 hover:text-sky-500">
+                  Privacy Policy
+                </a>
+              </p>
+            </div>
+            <div class="relative pl-6 before:absolute before:inset-y-0 before:left-0 before:w-px before:bg-gradient-to-b before:from-sky-600/50 before:via-sky-300/40 before:to-sky-600/50 hidden">
+              <figure class="space-y-6">
+                <div class="space-y-3">
+                  <blockquote>
+                    <p class="text-lg font-medium leading-8 text-gray-900">
+                      "The Amics AI newsletter has become my go-to source for staying informed about the latest AI developments. Highly recommended!"
+                    </p>
+                  </blockquote>
+                  <figcaption class="text-sm text-gray-600">
+                    <strong class="font-semibold text-gray-900">Sarah Chen</strong> • AI Researcher
+                  </figcaption>
+                </div>
+              </figure>
+            </div>
+          </div>
         </div>
-        <div id="success-message" class="text-sm text-green-600 hidden"></div>
-        <div id="error-message" class="text-sm text-red-600 hidden"></div>
-      </form>
-      <p class="mt-4 text-sm text-gray-500">
-        We care about your data. Read our{" "}
-        <a href="/privacy" class="font-medium text-sky-600 hover:text-sky-500">
-          Privacy Policy
-        </a>
-      </p>
+        <div class="absolute left-1/2 top-0 -z-10 -translate-x-1/2 blur-3xl xl:-top-6" aria-hidden="true">
+          <div class="aspect-[1155/678] w-[72.1875rem] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] opacity-[0.05]" style="clip-path: polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)"></div>
+        </div>
+      </div>
     </div>
-  </div>
 
     <div class="mt-8 border-t border-gray-200 pt-8">
       <a 
